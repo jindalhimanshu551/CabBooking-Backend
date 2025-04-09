@@ -12,10 +12,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/rides")
+@RequestMapping("/api/ride")
 public class RideController {
 
     @Autowired
@@ -52,7 +53,7 @@ public class RideController {
     @GetMapping("/{rideId}")
     public ResponseEntity<Ride> getRideById(@PathVariable Long rideId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserDetails currentUser = (UserDetails) authentication.getPrincipal();
+        UserDetails currentUser = (UserDetails) authentication. getPrincipal();
         User user = userService.getUserByEmail(currentUser.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
         Ride ride = rideService.getRideByIdAndUser(rideId, user);
@@ -60,6 +61,33 @@ public class RideController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
         return ResponseEntity.ok(ride);
+    }
+
+    @GetMapping("/completed-rides/{driverId}")
+    public ResponseEntity<?> getCompletedRides(@PathVariable Long driverId,
+                                 @RequestParam int year,
+                                 @RequestParam int month) {
+        Integer completedRide = rideService.getRidesCompletedByDriverInMonth(driverId, year, month);
+        return ResponseEntity.ok(completedRide);
+    }
+
+    @GetMapping("/monthly-earnings/{driverId}")
+    public ResponseEntity<?> getMonthlyEarnings(@PathVariable Long driverId,
+                                         @RequestParam int year,
+                                         @RequestParam int month) {
+        BigDecimal monthlyEarning = rideService.getMonthlyEarnings(driverId, year, month);
+        return ResponseEntity.ok(monthlyEarning);
+    }
+
+    @GetMapping("/total-earnings/{driverId}")
+    public ResponseEntity<?> getTotalEarnings(@PathVariable Long driverId) {
+        BigDecimal totalEarning = rideService.getTotalEarnings(driverId);
+        return ResponseEntity.ok(totalEarning);
+    }
+
+    @GetMapping("/completed-rides/all/{driverId}")
+    public List<Ride> getAllCompletedRides(@PathVariable Long driverId) {
+        return rideService.getAllCompletedRides(driverId);
     }
 
 }

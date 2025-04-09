@@ -9,7 +9,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Objects;
 
 @RestController
@@ -18,6 +17,21 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+
+    @GetMapping("/current")
+    public ResponseEntity<?> getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("{\"message\": \"Not Authorized\"}");
+        }
+        String email = authentication.getName();
+        User userObj = userService.getUserByEmail(email)
+                .orElse(null);
+        if (userObj != null) {
+            return ResponseEntity.status(HttpStatus.OK).body(userObj);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    }
 
     @DeleteMapping
     public ResponseEntity<Void> deleteUser() {
@@ -39,16 +53,14 @@ public class UserController {
         User userObj = userService.getUserByEmail(email)
                 .orElse(null);
 
-        // Check if user exists with the authenticated email
         if (userObj == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body("No user exists with this email.");
         }
 
-        // Check if the email in the request body is the same as the authenticated user's email
         if (!Objects.equals(user.getEmail(), userObj.getEmail())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("This email is already in use.");
+                    .body("Email cannot be changed");
         }
 
         userObj.setFullName(user.getFullName());

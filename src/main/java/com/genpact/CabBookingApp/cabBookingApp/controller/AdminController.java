@@ -8,10 +8,9 @@ import com.genpact.CabBookingApp.cabBookingApp.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -49,5 +48,42 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.OK).body(rides);
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    }
+
+    @GetMapping("allPassengers/")
+    public ResponseEntity<?> getAllPassengers() {
+        List<User> passengers = userService.getAllPassengers();
+        if(passengers.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No passengers found.");
+        }
+        return ResponseEntity.ok(passengers);
+    }
+
+    @GetMapping("totalEarnings/")
+    public ResponseEntity<?> getTotalEarnings() {
+        BigDecimal totalEarnings = rideService.calculateTotalEarnings();
+        return ResponseEntity.ok(totalEarnings);
+    }
+
+    @GetMapping("/driver/earnings")
+    public ResponseEntity<?> getEarningByDriverEmail(@RequestParam String email){
+        BigDecimal earnings = rideService.getTotalEarningsByDriverEmail(email);
+        return ResponseEntity.ok(earnings);
+    }
+
+    @GetMapping("/passenger/spending")
+    public ResponseEntity<?> getSpendingByPassengerEmail(@RequestParam String email){
+        BigDecimal spending = rideService.getTotalSpendingByPassengerEmail(email);
+        return ResponseEntity.ok(spending);
+    }
+
+    @DeleteMapping("deleteUser/")
+    public ResponseEntity<String> deleteUser(@RequestParam Long id) {
+        boolean isDeleted = userService.deleteUser(id);
+        if (isDeleted) {
+            return ResponseEntity.ok("User with ID " + id + " has been deleted successfully.");
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User with ID " + id + " not found.");
+        }
     }
 }

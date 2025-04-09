@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -22,10 +24,12 @@ public class Ride {
 
     @ManyToOne
     @JoinColumn(name = "passenger_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private User passenger;
 
     @ManyToOne
     @JoinColumn(name = "driver_id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Driver driver;
 
     @Column(nullable = false)

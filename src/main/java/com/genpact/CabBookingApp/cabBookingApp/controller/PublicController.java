@@ -2,8 +2,10 @@ package com.genpact.CabBookingApp.cabBookingApp.controller;
 
 import com.genpact.CabBookingApp.cabBookingApp.dto.DriverRegistrationRequest;
 import com.genpact.CabBookingApp.cabBookingApp.entity.Driver;
-import com.genpact.CabBookingApp.cabBookingApp.entity.Role;
 import com.genpact.CabBookingApp.cabBookingApp.entity.User;
+import com.genpact.CabBookingApp.cabBookingApp.exception.NullException;
+import com.genpact.CabBookingApp.cabBookingApp.exception.UserAlreadyExistWithuserIdException;
+import com.genpact.CabBookingApp.cabBookingApp.service.DriverRegisterationService;
 import com.genpact.CabBookingApp.cabBookingApp.service.DriverService;
 import com.genpact.CabBookingApp.cabBookingApp.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,36 +26,26 @@ public class PublicController {
     @Autowired
     private DriverService driverService;
 
+    @Autowired
+    private DriverRegisterationService driverRegisterationService;
+
     @PostMapping("user/")
     public ResponseEntity<User> createUser(@RequestBody User user) {
+        if(user == null || user.getEmail() == null || user.getPasswordHash() == null) {
+            throw new NullException("User details are missing or incomplete");
+        }
+
+        userService.getUserByEmail(user.getEmail()).ifPresent(existingUser -> {
+            throw new UserAlreadyExistWithuserIdException("User already exists with email: "+ user.getEmail());
+        });
         User savedUser = userService.newSaveUser(user);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedUser);
     }
 
     @PostMapping("driver/")
     public ResponseEntity<Driver> createDriver(@RequestBody DriverRegistrationRequest request) {
-        User user = User.builder()
-                .fullName(request.getFullName())
-                .email(request.getEmail())
-                .phoneNumber(request.getPhoneNumber())
-                .passwordHash(request.getPassword())
-                .role(Role.DRIVER)
-                .build();
-
-        User savedUser = userService.newSaveUser(user);
-
-        Driver driver = Driver.builder()
-                .user(savedUser)
-                .licenseNumber(request.getLicenseNumber())
-                .vehicleNumber(request.getVehicleNumber())
-                .vehicleModel(request.getVehicleModel())
-                .vehicleType(request.getVehicleType())
-                .availability(true)
-                .build();
-
-        Driver savedDriver = driverService.saveDriver(driver);
+        Driver savedDriver = driverRegisterationService.registerDriver(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedDriver);
     }
-
 
 }
